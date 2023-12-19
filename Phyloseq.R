@@ -41,7 +41,8 @@ library(remotes)
 devtools::install_github("vmikk/metagMisc")
 
 # Reading the ASV table - produced by running the fastq illumina raw reads through the DADA2 pipeline
-count_tab_VGM <- read.table("~/Library/CloudStorage/OneDrive-DartmouthCollege/Clay,carbon,oceans/VMenon_MS_ThesisWork/2023-24/Fall23/Microbiome_TWGrowthPhase/Day0TWGrowth_3umFilterMembrane_ASVs_counts.tsv", header=T, row.names=1, check.names=F, sep="\t")
+ASV_table <- "" # type in the .tsv file name obtained from DADA2 sequencing
+count_tab_VGM <- read.table(ASV_table, header=T, row.names=1, check.names=F, sep="\t")
 
 ASV_counts_VGM <- as.matrix(count_tab_VGM) #convert data table into matrix
 ASV_counts_VGM.df <- as.data.frame(ASV_counts_VGM) #convert matrix into data frame
@@ -50,7 +51,8 @@ ASV_counts_VGM.df <- as.data.frame(ASV_counts_VGM) #convert matrix into data fra
 
 
 # Assign a taxa to each ASV - ASV taxa file obtained from DADA2 pipeline
-asv_tax_VGM <- read.delim("~/Library/CloudStorage/OneDrive-DartmouthCollege/Clay,carbon,oceans/VMenon_MS_ThesisWork/2023-24/Fall23/Microbiome_TWGrowthPhase/Day0TWGrowth_3umFilterMembrane_ASVs_taxonomy.tsv", header=FALSE, fill=TRUE, row.names = 1)
+ASV_taxa <- "" #input the file name for the ASV taxa file obtained from DADA2 pipeline
+asv_tax_VGM <- read.delim(ASV_taxa, header=FALSE, fill=TRUE, row.names = 1)
 
 asv_tax_VGM.df <- asv_tax_VGM
 
@@ -67,7 +69,8 @@ asv_taxm_VGM <- as.matrix(asv_tax_VGM.df)
 ASV_countsn_VGM <- lapply(ASV_counts_VGM.df, as.numeric)
 
 # obtain the metadata for the sample treatments 
-VGM_metadata <- read_csv("~/Library/CloudStorage/OneDrive-DartmouthCollege/Clay,carbon,oceans/VMenon_MS_ThesisWork/2023-24/Fall23/Microbiome_TWGrowthPhase/Metadata_TWGRowthPhaseDay0.csv")
+Meta <- "" # input the file name for the csv file containing the metadata for the samples sequenced
+VGM_metadata <- read_csv(Meta)
 # convert row names to sample names
 VGM_metadata <- VGM_metadata %>% remove_rownames %>% column_to_rownames(var="Sample")
 
@@ -82,8 +85,8 @@ VGM_phyloseq <- phyloseq(otu_table(ASV_counts_VGM.df, taxa_are_rows=TRUE),
 VGM_phyloseq_rel = transform_sample_counts(VGM_phyloseq, function(x) (x / sum(x))*100 )
 
 ############################### Level ###################################
-
-taxa = "Class"
+# Modify the taxa level as desired                                        
+taxa = "Class" 
 taxan = 3
  
 taxa_counts_tab_VGM <- otu_table(tax_glom(VGM_phyloseq, taxa))
@@ -119,12 +122,12 @@ sample_info_for_merge_VGM<-data.frame("ID"=row.names(VGM_metadata),
 major_taxa_for_plot_VGM.g2 <- merge(major_taxa_for_plot_VGM.g, sample_info_for_merge_VGM)
 dim(major_taxa_for_plot_VGM.g2)
 
+outname <- "" # input the file name for the output of major taxa
+write.xlsx(major_taxa_for_plot_VGM, paste0(outname,taxa,'.xlsx'))
 
-write.xlsx(major_taxa_for_plot_VGM, paste0('TWGrowthPhaseDay0_BulkWater_relativeabundance_',taxa,'.xlsx'))
+phylumGlommed = tax_glom(VGM_phyloseq_rel, taxa)
 
-phylumGlommed = tax_glom(VGM_phyloseq_rel, "Class")
-
-p <- plot_bar(phylumGlommed, fill ="Class")+geom_bar(stat="identity")+xlab(">3um Size Fraction")+ylab("Relative Abundance [%]")
+p <- plot_bar(phylumGlommed, fill =taxa)+geom_bar(stat="identity")#+xlab(">3um Size Fraction")+ylab("Relative Abundance [%]")
 print(p)
 ############################### Filtering ######################################
 
@@ -139,7 +142,7 @@ new_gplot_VGM <- major_taxa_for_plot_VGM.g2[major_taxa_for_plot_VGM.g2$MTaxa =="
 
 
 
-write.xlsx(new_gplot_VGM, 'EN699_16s_relativeabundance_MajorPhylum.xlsx')
+write.xlsx(new_gplot_VGM, 'Relativeabundance_MajorPhylum.xlsx')
 
 ############################### Family Level ####################################
 
@@ -155,7 +158,7 @@ new_gplot_family_VGM <- major_taxa_for_plot_VGM.g2[major_taxa_for_plot_VGM.g2$MT
                                                      major_taxa_for_plot_VGM.g2$MTaxa == "Porticoccaceae"|
                                                      major_taxa_for_plot_VGM.g2$MTaxa == "Enterobacteriaceae",]
 
-write.xlsx(new_gplot_family_VGM, 'EN699_16s_relativeabundance_MajorFamily.xlsx')
+write.xlsx(new_gplot_family_VGM, 'Relativeabundance_MajorFamily.xlsx')
 
 ###############################Genera Level ####################################
 
@@ -171,36 +174,5 @@ new_gplot_genus_VGM <- major_taxa_for_plot_VGM.g2[major_taxa_for_plot_VGM.g2$MTa
                                                      major_taxa_for_plot_VGM.g2$MTaxa == "Sulfitobacter"|
                                                      major_taxa_for_plot_VGM.g2$MTaxa == "Pseudofulvibacter",]
 
-write.xlsx(new_gplot_genus_VGM, 'EN699_16s_relativeabundance_MajorGenus.xlsx')
+write.xlsx(new_gplot_genus_VGM, 'Relativeabundance_MajorGenus.xlsx')
 
-#############################Bar Plot###############################
-
-#here we are filtering ASVs that appear at least once in 10% of our samples
-
-wh0_VGM = genefilter_sample(VGM_phyloseq, filterfun_sample(function(x) x > 1), A=0.1*nsamples(VGM_phyloseq))
-VGM_phyloseq_pruned = prune_taxa(wh0_VGM, VGM_phyloseq)
-# convert counts to relative abundances
-VGM_phyloseq_pruned_transformed = transform_sample_counts(VGM_phyloseq_pruned, function(x) (x / sum(x))*100 )
-
-phyloseq_filter_prevalence(
-  VGM_phyloseq_rel,
-  prev.trh = NULL,
-  abund.trh = 0.05,
-  threshold_condition = "OR",
-  abund.type = "total"
-)
-phylumGlommed = tax_glom(VGM_phyloseq_rel, "Class")
-
-
-waterphyloglom = subset_samples(phylumGlommed, phylumGlommed@sam_data[["Sample_type"]] != "Floc")
-waterphyloglom@sam_data[["Clay_concentraion.mg.L."]] <- as.character(waterphyloglom@sam_data[["Clay_concentraion.mg.L."]])
-p <- plot_bar(waterphyloglom, x= c("Clay_concentraion.mg.L."), fill ="Class")+geom_bar(stat="identity")+facet_wrap("size_fraction")+xlab("Clay concentration [mg/L]")+ylab("Relative Abundance [%]")
-
-p$data$size_fraction <- factor(p$data$size_fraction, levels = c("Natural", "200 um", "3 um"))
-
-print(p)
-
-flocphyloglom = subset_samples(phylumGlommed, phylumGlommed@sam_data[["Sample_type"]] != "Water")
-plot_bar(flocphyloglom, x="size_fraction", fill ="Class")+geom_bar(stat="identity")+facet_wrap("size_fraction")
-
-plot_pie(waterphyloglom, x="size_fraction", fill ="Genus")+geom_bar(stat="identity")+facet_wrap("Clay_concentraion.mg.L.") 
