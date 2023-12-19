@@ -18,7 +18,7 @@ library(picante); packageVersion("picante")
 
 
 #assign the working directory with the specific raw reads (Illumina 16S fastqz.gz files)
-path <- "~/Library/CloudStorage/OneDrive-DartmouthCollege/Clay,carbon,oceans/VMenon_MS_ThesisWork/2022-23/Fall23/Microbiome_TWGrowthPhase/Day0" # CHANGE ME to the directory containing the fastq files after unzipping.
+path <- "" # CHANGE ME to the directory containing the fastq files after unzipping.
 list.files(path)
 
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
@@ -97,10 +97,8 @@ colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "n
 rownames(track) <- sample.names
 head(track)
 
-
-taxa <- assignTaxonomy(seqtab.nochim, "~/Library/CloudStorage/OneDrive-DartmouthCollege/Clay,carbon,oceans/VMenon_MS_ThesisWork/2022-23/Fall23/Microbiome_TWGrowthPhase/silva_nr99_v138.1_train_set.fa", multithread=TRUE)
-
-#taxa <- addSpecies(taxa, "~/Library/CloudStorage/OneDrive-DartmouthCollege/Clay,carbon,oceans/VMenon_MS_ThesisWork/2022-23/Summer23/MicrobialRAnalysis_EN699/silva_species_assignment_v132.fa")
+silva <- "" # assign the path for silva_nr99_v138.1_train_set.fa file for taxa assignment
+taxa <- assignTaxonomy(seqtab.nochim, silva, multithread=TRUE)
 
 taxa.print <- taxa # Removing sequence rownames for display only
 rownames(taxa.print) <- NULL
@@ -117,19 +115,22 @@ for (i in 1:dim(seqtab.nochim)[2]) {
 
 # making and writing out a fasta of our final ASV seqs:
 asv_fasta <- c(rbind(asv_headers, asv_seqs))
-write(asv_fasta, "Day0TWGrowth_3umFilterMembrane_ASVs.fa")
+ASV_seq <- "" # filename for the output of final ASV seqs
+write(asv_fasta, ASV_seq)
 
 # count table:
 asv_tab <- t(seqtab.nochim)
 row.names(asv_tab) <- sub(">", "", asv_headers)
-write.table(asv_tab, "Day0TWGrowth_3umFilterMembrane_ASVs_counts.tsv", sep="\t", quote=F, col.names=NA)
+ASV_table <- "" # output file name for the counts for each ASV
+write.table(asv_tab, ASV_table, sep="\t", quote=F, col.names=NA)
 
 # tax table:
 # creating table of taxonomy and setting any that are unclassified as "NA"
 asv_tax <- taxa
 rownames(asv_tax) <- gsub(pattern=">", replacement="", x=asv_headers)
 
-write.table(asv_tax, "Day0TWGrowth_3umFilterMembrane_ASVs_taxonomy.tsv", sep = "\t", quote=F, col.names=NA)
+ASV_taxatable <- "" # output file for the ASV taxa table
+write.table(asv_tax, ASV_taxatable, sep = "\t", quote=F, col.names=NA)
 
 
 
